@@ -1,10 +1,11 @@
-input_file?=/dev/tty
+input_file?=./sample.txt
+main=main.c
 
 all:
-	gcc project1_test.c -o a.out
+	gcc $(main) -o a.out
 	./a.out < $(input_file)
 
 idebug:
-	gcc project1_test.c -DINPUTDEBUG -o a.out
+	gcc $(main) -DINPUTDEBUG -o a.out
 	./a.out < $(input_file) 2> debug.txt
 	
