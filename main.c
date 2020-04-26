@@ -48,20 +48,21 @@ int main() {
 	struct procData pList[nProc+1]; 
 	for(int n = 1; n <= nProc; n++)
 		scanf("%s %d %d", pList[n].name, &(pList[n].tReady), &(pList[n].tExec));
-	qsort(pList, nProc, sizeof(struct procData), procCmp);
+	qsort(pList+1, nProc, sizeof(struct procData), procCmp);
 	
 	scheduler(nProc, pList, policyID);
 	
-#ifdef inputDEBUG
+#ifdef INPUTDEBUG
 	fprintf(stderr, "Policy: %s (ID %d)\n", policy, policyID);
 	for(int n = 1; n <= nProc; n++)
-		fprintf(stderr, "%s %d %d\n", pData[n].name, pData[n].tReady, pData[n].tExec);
+		fprintf(stderr, "%s %d %d\n", pList[n].name, pList[n].tReady, pList[n].tExec);
 #endif
 	
-#ifdef DEBUG
+#ifdef QSORTDEBUG
 	for(int n = 1; n <= nProc; n++) {
 		fprintf(stderr, "(%d, %d) ", n, pList[n].tReady);
 	}
+	fprintf(stderr, "\n");
 #endif
 }
 
@@ -100,7 +101,7 @@ pid_t execProc(int tExec) {
 		        start.tv_sec, start.tv_nsec, end.tv_sec, end.tv_nsec);
 		// syscall(PRINTK, getpid(), start.tv_sec, start.tv_nsec,
                 //                           end.tv_sec, end.tv_nsec);
-#ifdef DEBUG
+#ifdef OUTPUTDEBUG
 		fprintf(stderr, "%s", msg2dmesg);
 #endif
 		exit(0);
@@ -144,7 +145,6 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 	while(1) {
 		if(runningProc != -1 && pList[runningProc].tExec == 0) {
 			waitpid(pList[runningProc].pid, NULL, 0);
-			printf("%s %d\n", pList[runningProc].name, pList[runningProc].pid);
 			runningProc = -1;
 			nFinished++;
 			
@@ -152,15 +152,21 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 				break;
 		}
 		
-		for(int n = 1; n <= nProc; n++)
+		for(int n = 1; n <= nProc; n++) {
 			if(tUnits == pList[n].tReady) {
 				pList[n].pid = execProc(pList[n].tExec);
 				blockProc(pList[n].pid);
+				printf("%s %d\n", pList[n].name, pList[n].pid);
 			}
+		}
 		
+	
 		int nextProc = selectNext(nProc, pList, policyID);
 		if(nextProc != -1) {
 			if(nextProc != runningProc) {
+#ifdef SCHEDDEBUG
+				printf("%d running: %d next %d\n", tUnits, runningProc, nextProc);
+#endif
 				if(runningProc != -1)
 					blockProc(pList[runningProc].pid);
 				wakeProc(pList[nextProc].pid);
@@ -168,8 +174,13 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 				lastSwitch = tUnits;
 			}
 		}
-		
-		unitsOfTime(1);
+
+#ifdef SCHEDDEBUG	
+		if(tUnits % 100 == 0)
+			printf("t = %d\n", tUnits);
+#endif
+	
+	unitsOfTime(1);
 		if(runningProc != -1)
 			pList[runningProc].tExec--;
 		tUnits++;
@@ -185,12 +196,13 @@ int selectNext(int nProc, struct procData *pList, int policyID) {
 	int nextProc = -1;
 	if(policyID == RR) {
 		if(runningProc == -1)
-			for(int n = 1; n <= nProc && nextProc < 0; n++)
+			for(int n = 1; n <= nProc && nextProc < 0; n++) {
 				if(pList[n].pid != -1 && pList[n].tExec > 0)
 					nextProc = n;
+			}
 		else if((tUnits - lastSwitch) % T_QUANTUM == 0) {
 			nextProc = (runningProc % nProc) + 1;
-			while(pList[n].pid == -1 || pList[n].tExec == 0)
+			while(pList[nextProc].pid == -1 || pList[nextProc].tExec == 0)
 				nextProc = (nextProc % nProc) + 1;
 		}
 	}
