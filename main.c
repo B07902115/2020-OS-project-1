@@ -98,7 +98,8 @@ pid_t execProc(int tExec) {
 		char msg2dmesg[STRSIZE];
 		sprintf(msg2dmesg, "[project1] %d %lu.%lu %lu.%lu\n", getpid(),
 		        start.tv_sec, start.tv_nsec, end.tv_sec, end.tv_nsec);
-		// syscall(PRINTK, getpid(), start, end);
+		// syscall(PRINTK, getpid(), start.tv_sec, start.tv_nsec,
+                //                           end.tv_sec, end.tv_nsec);
 #ifdef DEBUG
 		fprintf(stderr, "%s", msg2dmesg);
 #endif
