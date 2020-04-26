@@ -60,7 +60,7 @@ int main() {
 	
 #ifdef DEBUG
 	for(int n = 1; n <= nProc; n++) {
-		fprintf(stderr, "(%d, %d) ", id, pList[n].tReady);
+		fprintf(stderr, "(%d, %d) ", n, pList[n].tReady);
 	}
 #endif
 }
@@ -98,7 +98,7 @@ pid_t execProc(int tExec) {
 		char msg2dmesg[STRSIZE];
 		sprintf(msg2dmesg, "[project1] %d %lu.%lu %lu.%lu\n", getpid(),
 		        start.tv_sec, start.tv_nsec, end.tv_sec, end.tv_nsec);
-		// syscall(PRINTK, msg2dmesg);
+		// syscall(PRINTK, getpid(), start, end);
 #ifdef DEBUG
 		fprintf(stderr, "%s", msg2dmesg);
 #endif
