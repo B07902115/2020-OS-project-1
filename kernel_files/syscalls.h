@@ -943,5 +943,5 @@ asmlinkage long sys_statx(int dfd, const char __user *path, unsigned flags,
 
 asmlinkage void sys_my_printk(int pid, unsigned long ss, unsigned long sn,
                                        unsigned long es, unsigned long en);
-
+asmlinkage void sys_my_getnstimeofday(struct timespec *t);
 #endif

@@ -16,6 +16,7 @@
 #define PSJF 3
 #define T_QUANTUM 500
 #define PRINTK 333
+#define GETNSTIMEOFDAY 334
 
 /* Global Variables */
 int tUnits;
@@ -90,16 +91,12 @@ pid_t execProc(int tExec) {
 	int pid;
 	if((pid = fork()) == 0) {
 		struct timespec start, end;
-		clock_gettime(CLOCK_REALTIME, &start);
+		syscall(GETNSTIMEOFDAY, &start);
 		
 		unitsOfTime(tExec);
 		
-		clock_gettime(CLOCK_REALTIME, &end);
-		
-		char msg2dmesg[STRSIZE];
-		sprintf(msg2dmesg, "[project1] %d %lu.%lu %lu.%lu\n", getpid(),
-		        start.tv_sec, start.tv_nsec, end.tv_sec, end.tv_nsec);
-		 syscall(PRINTK, getpid(), start.tv_sec, start.tv_nsec,
+		syscall(GETNSTIMEOFDAY, &end);
+		syscall(PRINTK, getpid(), start.tv_sec, start.tv_nsec,
                                            end.tv_sec, end.tv_nsec);
 #ifdef OUTPUTDEBUG
 		fprintf(stderr, "%s", msg2dmesg);
