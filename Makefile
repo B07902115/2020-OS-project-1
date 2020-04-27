@@ -27,9 +27,11 @@ output_debug:
 	./a.out < $(input_file) 2> debug.txt
 
 test:
+	@echo
 	dmesg --clear
 	./a.out < $(test_files)/$(input_file).txt > $(output_dir)/$(input_file)_output.txt
 	dmesg | grep project1 > $(output_dir)/$(input_file)_dmesg.txt
+	@echo
 
 generate_test:
 	gcc $(main) -o a.out
