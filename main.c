@@ -157,6 +157,7 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 				pList[n].pid = execProc(pList[n].tExec);
 				blockProc(pList[n].pid);
 				printf("%s %d\n", pList[n].name, pList[n].pid);
+				fflush(stdout);
 			}
 		}
 		
