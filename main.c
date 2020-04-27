@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/resource.h>
 #include <sys/syscall.h>
 #include <time.h>
 #include <string.h>
@@ -14,7 +15,7 @@
 #define RR 1
 #define SJF 2
 #define PSJF 3
-#define T_QUANTUM 100
+#define T_QUANTUM 500
 #define PRINTK 333
 #define GETNSTIMEOFDAY 334
 
@@ -84,10 +85,10 @@ void queuePush(int n)
 	input->data = n;
 	input->next = NULL;
 
-	if(first == NULL)
+	if(end == NULL)
+		first = end = input;
+	else if(first == NULL) {
 		first = input;
-	if(end == NULL) {
-		end = input;
 	}
 	else {
 		end->next = input;
@@ -103,6 +104,7 @@ int queuePop()
 		first = first->next;
 		int val = tmp->data;
 		free(tmp);
+		// printf("head empty %d; end %d\n", first==NULL, end==NULL);
 		return val;
 	}
 	return -1;
@@ -153,6 +155,7 @@ int wakeProc(int pid) {
 	struct sched_param param;
 	param.sched_priority = 0;
 	int ret = sched_setscheduler(pid, SCHED_OTHER, &param);
+	// setpriority(PRIO_PROCESS, pid, 0);
 	if(ret < 0) {
 		perror("Error returned by sched_setscheduler()");
 		return -1;
@@ -164,6 +167,7 @@ int blockProc(int pid) {
 	struct sched_param param;
 	param.sched_priority = 0;
 	int ret = sched_setscheduler(pid, SCHED_IDLE, &param);
+	// setpriority(PRIO_PROCESS, pid, 20);
 	if(ret < 0) {
 		perror("Error returned by sched_setscheduler");
 		return -1;
@@ -219,7 +223,7 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 		}
 
 #ifdef SCHEDDEBUG	
-		if(tUnits % 5 == 0)
+		if(tUnits % 100 == 0)
 			printf("t = %d\n", tUnits);
 #endif
 	
