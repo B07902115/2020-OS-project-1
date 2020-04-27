@@ -30,6 +30,15 @@ struct procData {
 	pid_t pid;
 };
 
+struct queue {
+   int data;
+   struct queue *next;
+};
+struct queue *first = NULL, *end = NULL;
+void queuePush(int id);
+int queuePop();
+int queueTop();
+
 void unitsOfTime(unsigned T);
 int getPolicyID(char *policy);
 
@@ -68,6 +77,40 @@ int main() {
 }
 
 // ==============================================================================
+
+void queuePush(int n)
+{
+   struct queue *tmp;
+   tmp = (struct queue*)malloc(sizeof(struct queue));
+   tmp->data = n;
+   tmp->next = NULL;
+
+   if (end == NULL)
+      first = end = tmp;
+   else {
+      end->next = tmp;
+      end = tmp;
+   }
+}
+
+int queuePop()
+{
+   struct queue *tmp = first;
+
+   if (tmp != NULL) {
+      first = first->next;
+      int val = tmp->data;
+      free(tmp);
+      return val;
+   }
+}
+
+int queueTop()
+{
+   if (first != NULL)
+	   return first->data;
+   return -1;
+}
 
 void unitsOfTime(unsigned T) {
 	while(T--) {
@@ -153,6 +196,8 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 			if(tUnits == pList[n].tReady) {
 				pList[n].pid = execProc(pList[n].tExec);
 				blockProc(pList[n].pid);
+				if(policyID == RR)
+					queuePush(n);
 				printf("%s %d\n", pList[n].name, pList[n].pid);
 				fflush(stdout);
 			}
@@ -165,8 +210,11 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 #ifdef SCHEDDEBUG
 				printf("%d running: %d next %d\n", tUnits, runningProc, nextProc);
 #endif
-				if(runningProc != -1)
+				if(runningProc != -1) {
 					blockProc(pList[runningProc].pid);
+					if(policyID == RR)
+						queuePush(runningProc);
+				}
 				wakeProc(pList[nextProc].pid);
 				runningProc = nextProc;
 				lastSwitch = tUnits;
@@ -192,18 +240,8 @@ int selectNext(int nProc, struct procData *pList, int policyID) {
 		return runningProc;
 	
 	int nextProc = -1;
-	if(policyID == RR) {
-		if(runningProc == -1)
-			for(int n = 1; n <= nProc && nextProc < 0; n++) {
-				if(pList[n].pid != -1 && pList[n].tExec > 0)
-					nextProc = n;
-			}
-		else if((tUnits - lastSwitch) % T_QUANTUM == 0) {
-			nextProc = (runningProc % nProc) + 1;
-			while(pList[nextProc].pid == -1 || pList[nextProc].tExec == 0)
-				nextProc = (nextProc % nProc) + 1;
-		}
-	}
+	if(policyID == RR)
+		nextProc = queuePop();
 	else if(policyID == FIFO) {
 		for(int n = 1; n <= nProc; n++) {
 			if(pList[n].pid == -1 || pList[n].tExec == 0)
