@@ -14,7 +14,7 @@
 #define RR 1
 #define SJF 2
 #define PSJF 3
-#define T_QUANTUM 500
+#define T_QUANTUM 100
 #define PRINTK 333
 #define GETNSTIMEOFDAY 334
 
@@ -37,7 +37,6 @@ struct queue {
 struct queue *first = NULL, *end = NULL;
 void queuePush(int id);
 int queuePop();
-int queueTop();
 
 void unitsOfTime(unsigned T);
 int getPolicyID(char *policy);
@@ -80,36 +79,33 @@ int main() {
 
 void queuePush(int n)
 {
-   struct queue *tmp;
-   tmp = (struct queue*)malloc(sizeof(struct queue));
-   tmp->data = n;
-   tmp->next = NULL;
+	struct queue *input;
+	input = (struct queue*)malloc(sizeof(struct queue));
+	input->data = n;
+	input->next = NULL;
 
-   if (end == NULL)
-      first = end = tmp;
-   else {
-      end->next = tmp;
-      end = tmp;
-   }
+	if(first == NULL)
+		first = input;
+	if(end == NULL) {
+		end = input;
+	}
+	else {
+		end->next = input;
+    		end = input;
+	}
 }
 
 int queuePop()
 {
-   struct queue *tmp = first;
+  	struct queue *tmp = first;
 
-   if (tmp != NULL) {
-      first = first->next;
-      int val = tmp->data;
-      free(tmp);
-      return val;
-   }
-}
-
-int queueTop()
-{
-   if (first != NULL)
-	   return first->data;
-   return -1;
+	if (tmp != NULL) {
+		first = first->next;
+		int val = tmp->data;
+		free(tmp);
+		return val;
+	}
+	return -1;
 }
 
 void unitsOfTime(unsigned T) {
@@ -187,7 +183,7 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 			waitpid(pList[runningProc].pid, NULL, 0);
 			runningProc = -1;
 			nFinished++;
-			
+
 			if(nFinished == nProc)
 				break;
 		}
@@ -212,8 +208,9 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 #endif
 				if(runningProc != -1) {
 					blockProc(pList[runningProc].pid);
-					if(policyID == RR)
+					if(policyID == RR) {
 						queuePush(runningProc);
+					}
 				}
 				wakeProc(pList[nextProc].pid);
 				runningProc = nextProc;
@@ -222,7 +219,7 @@ int scheduler(int nProc, struct procData *pList, int policyID) {
 		}
 
 #ifdef SCHEDDEBUG	
-		if(tUnits % 100 == 0)
+		if(tUnits % 5 == 0)
 			printf("t = %d\n", tUnits);
 #endif
 	
@@ -240,8 +237,12 @@ int selectNext(int nProc, struct procData *pList, int policyID) {
 		return runningProc;
 	
 	int nextProc = -1;
-	if(policyID == RR)
-		nextProc = queuePop();
+	if(policyID == RR) {
+		if(runningProc == -1 || (tUnits - lastSwitch) % T_QUANTUM == 0) 
+			nextProc = queuePop();
+		else
+			nextProc = runningProc;
+	}
 	else if(policyID == FIFO) {
 		for(int n = 1; n <= nProc; n++) {
 			if(pList[n].pid == -1 || pList[n].tExec == 0)
