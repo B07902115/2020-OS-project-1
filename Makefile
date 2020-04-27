@@ -37,7 +37,7 @@ generate_test:
 	gcc $(main) -o a.out
 	for i in `ls $(test_files)`; do make test input_file=$$(basename $$i .txt); done;
 
-demo:
+demo_test:
 	@echo
 	dmesg --clear
 	./a.out < $(test_files)/$(input_file).txt
@@ -45,4 +45,4 @@ demo:
 	@echo
 
 generate_demo:
-	for i in $(demo_files); do make demo input_file=$$i; done;
+	for i in $(demo_files); do make demo_test input_file=$$i; done;
