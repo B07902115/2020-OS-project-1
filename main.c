@@ -137,8 +137,7 @@ pid_t execProc(int tExec) {
 		unitsOfTime(tExec);
 		
 		syscall(GETNSTIMEOFDAY, &end);
-		syscall(PRINTK, getpid(), start.tv_sec, start.tv_nsec,
-                                           end.tv_sec, end.tv_nsec);
+		syscall(PRINTK, getpid(), start, end);
 #ifdef OUTPUTDEBUG
 		fprintf(stderr, "%s", msg2dmesg);
 #endif
